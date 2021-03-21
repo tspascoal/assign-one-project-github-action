@@ -50,26 +50,23 @@ find_project_id() {
       _ENDPOINT="https://api.github.com/repos/$GITHUB_REPOSITORY/projects?per_page=1"
       ;;
   esac
-
+  
   _NEXT_URL="$_ENDPOINT"
 
   while : ; do
 
-    _PROJECTS=$(curl -X GET -u "$GITHUB_ACTOR:$TOKEN" --retry 3 \
-            -D /tmp/headers \
+    _PROJECTS=$(curl -s -X GET -u "$GITHUB_ACTOR:$TOKEN" --retry 3 \
             -H 'Accept: application/vnd.github.inertia-preview+json' \
+            -D /tmp/headers \
             "$_NEXT_URL")
 
-
     _PROJECTID=$(echo "$_PROJECTS" | jq -r ".[] | select(.html_url == \"$_PROJECT_URL\").id")
-    
     _NEXT_URL=$(get_next_url_from_headers '/tmp/headers')
 
     if [ "$_PROJECTID" != "" ]; then
       echo "$_PROJECTID"
-      break
-    elif  [ "$_NEXT_URL" == "" ]; then
-      echo "No project was found2." >&2
+    elif [ "$_NEXT_URL" == "" ]; then
+      echo "No project was found." >&2
       exit 1
     fi
   done
@@ -120,7 +117,6 @@ fi
 
 
 PROJECT_ID=$(find_project_id "$PROJECT_TYPE" "$PROJECT_URL")
-echo "NOT HERE $?"
 INITIAL_COLUMN_ID=$(find_column_id "$PROJECT_ID" "${INITIAL_COLUMN_NAME:?<Error> required this environment variable}")
 
 if [ -z "$INITIAL_COLUMN_ID" ]; then
