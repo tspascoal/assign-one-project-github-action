@@ -71,7 +71,6 @@ find_project_id() {
     elif  [ "$_NEXT_URL" == "" ]; then
       echo "No project was found2." >&2
       exit 1
-
     fi
   done
 
@@ -121,6 +120,7 @@ fi
 
 
 PROJECT_ID=$(find_project_id "$PROJECT_TYPE" "$PROJECT_URL")
+echo "NOT HERE $?"
 INITIAL_COLUMN_ID=$(find_column_id "$PROJECT_ID" "${INITIAL_COLUMN_NAME:?<Error> required this environment variable}")
 
 if [ -z "$INITIAL_COLUMN_ID" ]; then
