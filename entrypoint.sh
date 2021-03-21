@@ -40,24 +40,26 @@ find_project_id() {
   case "$_PROJECT_TYPE" in
     org)
       _ORG_NAME=$(echo "$_PROJECT_URL" | sed -e 's@https://github.com/orgs/\([^/]\+\)/projects/[0-9]\+@\1@')
-      _ENDPOINT="https://api.github.com/orgs/$_ORG_NAME/projects"
+      _ENDPOINT="https://api.github.com/orgs/$_ORG_NAME/projects?per_page=1"
       ;;
     user)
       _USER_NAME=$(echo "$_PROJECT_URL" | sed -e 's@https://github.com/users/\([^/]\+\)/projects/[0-9]\+@\1@')
-      _ENDPOINT="https://api.github.com/users/$_USER_NAME/projects"
+      _ENDPOINT="https://api.github.com/users/$_USER_NAME/projects?per_page=1"
       ;;
     repo)
-      _ENDPOINT="https://api.github.com/repos/$GITHUB_REPOSITORY/projects"
+      _ENDPOINT="https://api.github.com/repos/$GITHUB_REPOSITORY/projects?per_page=1"
       ;;
   esac
 
-  _NEXT_URL="$_ENDPOINT&per_page=1"
+  _NEXT_URL="$_ENDPOINT"
 
   while : ; do
 
-    _PROJECTS=$(curl -s -D /tmp/headers -X GET -u "$GITHUB_ACTOR:$TOKEN" --retry 3 \
+    _PROJECTS=$(curl -X GET -u "$GITHUB_ACTOR:$TOKEN" --retry 3 \
+            -D /tmp/headers \
             -H 'Accept: application/vnd.github.inertia-preview+json' \
             "$_NEXT_URL")
+
 
     _PROJECTID=$(echo "$_PROJECTS" | jq -r ".[] | select(.html_url == \"$_PROJECT_URL\").id")
     
@@ -66,7 +68,7 @@ find_project_id() {
     if [ "$_PROJECTID" != "" ]; then
       echo "$_PROJECTID"
       break
-    elif  [ "$" == "" ]; then
+    elif  [ "$_NEXT_URL" == "" ]; then
       echo "No project was found." >&2
       exit 1
     fi
