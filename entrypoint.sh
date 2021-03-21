@@ -69,8 +69,9 @@ find_project_id() {
       echo "$_PROJECTID"
       break
     elif  [ "$_NEXT_URL" == "" ]; then
-      echo "No project was found." >&2
+      echo "No project was found2." >&2
       exit 1
+
     fi
   done
 
