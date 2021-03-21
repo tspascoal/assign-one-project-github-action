@@ -28,6 +28,11 @@ get_project_type() {
   unset _PROJECT_URL
 }
 
+get_next_url_from_headers() {
+  _HEADERS_FILE=$1
+  grep -i '^link' "$_HEADERS_FILE" | tr ',' '\n'| grep \"next\" | sed 's/.*<\(.*\)>.*/\1/'
+}
+
 find_project_id() {
   _PROJECT_TYPE="$1"
   _PROJECT_URL="$2"
@@ -46,20 +51,28 @@ find_project_id() {
       ;;
   esac
 
-  _PROJECTS=$(curl -s -X GET -u "$GITHUB_ACTOR:$TOKEN" --retry 3 \
-           -H 'Accept: application/vnd.github.inertia-preview+json' \
-           "$_ENDPOINT")
+  _NEXT_URL="$_ENDPOINT&per_page=1"
 
-  _PROJECTID=$(echo "$_PROJECTS" | jq -r ".[] | select(.html_url == \"$_PROJECT_URL\").id")
+  while : ; do
 
-  if [ "$_PROJECTID" != "" ]; then
-    echo "$_PROJECTID"
-  else
-    echo "No project was found." >&2
-    exit 1
-  fi
+    _PROJECTS=$(curl -s -D /tmp/headers -X GET -u "$GITHUB_ACTOR:$TOKEN" --retry 3 \
+            -H 'Accept: application/vnd.github.inertia-preview+json' \
+            "$_NEXT_URL")
 
-  unset _PROJECT_TYPE _PROJECT_URL _ORG_NAME _USER_NAME _ENDPOINT _PROJECTS _PROJECTID
+    _PROJECTID=$(echo "$_PROJECTS" | jq -r ".[] | select(.html_url == \"$_PROJECT_URL\").id")
+    
+    _NEXT_URL=$(get_next_url_from_headers '/tmp/headers')
+
+    if [ "$_PROJECTID" != "" ]; then
+      echo "$_PROJECTID"
+      break
+    elif  [ "$" == "" ]; then
+      echo "No project was found." >&2
+      exit 1
+    fi
+  done
+
+  unset _PROJECT_TYPE _PROJECT_URL _ORG_NAME _USER_NAME _ENDPOINT _PROJECTS _PROJECTID _NEXT_URL
 }
 
 find_column_id() {
